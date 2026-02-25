@@ -98,18 +98,6 @@ Then, enable **C**ode **R**eady **B**uilder, crb (Powertools equivalent of Rocky
 sudo crb enable
 ```
 
-#### 1.1.5 Install Development Related Packages
-
-Install packages required for the build process.
-
-```
-sudo yum group -y install "Development Tools"
-```
-
-```
-sudo dnf -y install git wget emacs-nox subversion net-tools kernel-devel sqlite-devel psmisc ncurses-devel newt-devel libxml2-devel libtiff-devel gtk2-devel libtool libuuid-devel crontabs cronie-anacron libedit libedit-devel gnutls-devel sox sox-devel unixODBC unixODBC-devel libtool-ltdl libtool-ltdl-devel
-```
-
 #### 1.1.6 Install MariaDB Database Server
 
 Install Mariadb for FreePBX database.
