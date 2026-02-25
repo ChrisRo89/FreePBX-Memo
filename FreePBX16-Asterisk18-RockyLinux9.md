@@ -50,11 +50,11 @@ sudo sed -i 's/\(^SELINUX=\).*/\SELINUX=disabled/' /etc/sysconfig/selinux &&
 sudo sed -i 's/\(^SELINUX=\).*/\SELINUX=disabled/' /etc/selinux/config &&
 ```
 
-Make sure the SELINUX is disabled.
+Make sure the SELINUX is permissive or disabled.
 
 ```
-# sestatus
-SELinux status:                 disabled
+# getenforce
+Permissive (or Disable)
 ```
 
 #### 1.1.3 Firewalld Basic Configuration
@@ -95,7 +95,7 @@ sudo dnf install -y epel-release
 Then, enable **C**ode **R**eady **B**uilder, crb (Powertools equivalent of Rocky Linux 8)
 
 ```
-sudo dnf config-manager --set-enabled crb
+sudo crb enable
 ```
 
 #### 1.1.5 Install Development Related Packages
