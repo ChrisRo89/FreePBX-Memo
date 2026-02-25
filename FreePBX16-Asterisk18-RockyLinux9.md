@@ -1,4 +1,4 @@
-# FreePBX 16 + Asterisk 18 Installation on Rocky Linux 9
+# FreePBX 17 + Asterisk 18 Installation on Rocky Linux 9
 
 ## 0 Preface
 
@@ -19,10 +19,10 @@ Care must be taken the software dependency must meet; otherwise, FreePBX will no
 Although, Sangoma is not officially releasing the installation procedure for Rocky Linux 9 based platform, the team is working on FreePBX version 17 with Rocky Linux 8 environment, this document will evaluate and determine whether Rocky Linux 9 platform is relevant for production PBX use.
 
 - **jansson**: version 2.14
-- **php**: version remi-7.4
-- **NodeJS**: version 10.24.1
+- **php**: version 8.2 (included in OS)
+- **NodeJS**: version 18.x
 - **Asterisk**: version 18.17.0
-- **FreePBX**: version 16.0.40
+- **FreePBX**: version 17.0.40
 
 ## 1 Installation
 
@@ -327,36 +327,30 @@ EOF
 systemctl restart httpd.service
 ```
 
-#### 1.3.4 Install PHP (PHP 7.4)
+#### 1.3.4 Install PHP (PHP 8.2)
 
-FreePBX is picky about PHP version. Installing version 7.4.
+FreePBX is picky about PHP version. Installing version 8.2.
 
-```
-sudo dnf -y install yum-utils &&
-sudo dnf -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm &&
-sudo dnf -y install https://rpms.remirepo.net/enterprise/remi-release-9.rpm
-```
-
-By default, php 8.1 is selected. Reset it and install `remi-7.4` version.
+By default, php 8.0 is selected. Reset it and install `php 8.2` version.
 
 ```
 sudo dnf module -y reset php &&
-sudo dnf module -y install php:remi-7.4
+sudo dnf module -y install php:8.2
 ```
 
 ```
 # dnf module list php
-Last metadata expiration check: 0:26:07 ago on Mon 03 Apr 2023 06:03:19 AM CDT.
+Last metadata expiration check: 0:00:59 ago on Wed 25 Feb 2026 06:33:03 PM CET.
 Rocky Linux 9 - AppStream
 Name     Stream          Profiles                          Summary
-php      8.1             common [d], devel, minimal        PHP scripting language
+php                                              8.1                                                 common [d], devel, minimal                                             PHP scripting language
 
-Remi's Modular repository for Enterprise Linux 9 - x86_64
-Name     Stream          Profiles                          Summary
-php      remi-7.4 [e]    common [d] [i], devel, minimal    PHP scripting language
-php      remi-8.0        common [d], devel, minimal        PHP scripting language
-php      remi-8.1        common [d], devel, minimal        PHP scripting language
-php      remi-8.2        common [d], devel, minimal        PHP scripting language
+Rocky Linux 9 - AppStream
+Name                                             Stream                                              Profiles                                                               Summary
+php                                              8.1                                                 common [d], devel, minimal                                             PHP scripting language
+php                                              8.2 [e]                                             common [d], devel, minimal                                             PHP scripting language
+php                                              8.3                                                 common [d], devel, minimal                                             PHP scripting language
+
 ```
 
 Then, install required extensions.
@@ -390,26 +384,21 @@ sudo sed -i 's/\(^listen.acl_users = \).*/\1apache,nginx,asterisk/' /etc/php-fpm
 
 #### 1.3.5 FreePBX Installation
 
-Download the latest FreePBX 16 and install.
+Download the latest FreePBX 17 and install.
 
 ```
 cd /opt/app/usr/src &&
-wget http://mirror.freepbx.org/modules/packages/freepbx/7.4/freepbx-16.0-latest.tgz &&
-tar zxvf freepbx-16.0-latest.tgz &&
+curl -LO [http://mirror.freepbx.org/modules/packages/freepbx/freepbx-17.0-latest.tgz](http://mirror.freepbx.org/modules/packages/freepbx/freepbx-17.0-latest.tgz)
+tar zxvf freepbx-17.0-latest.tgz &&
 cd freepbx
 ```
 
 Then run the installation script...
 
 ```
-cd /opt/app/usr/src/asterisk-18.* &&
-make basic-pbx &&
-make config &&
-ldconfig &&
+systemctl enable --now asterisk &&
 cd /opt/app/usr/src/freepbx &&
-./start_asterisk restart &&
 ps aux | grep asterisk &&
-rm -f /etc/asterisk/asterisk.conf &&
 ./install -n
 ```
 
@@ -505,9 +494,7 @@ systemctl stop asterisk &&
 systemctl stop freepbx &&
 systemctl stop httpd &&
 systemctl stop php-fpm &&
-# Remove Asterisk related folders
-cd /opt/app/usr/src/asterisk-18.* &&
-make uninstall-all &&
+systemctl stop asterisk &&
 # Remove remaining files in /etc
 rm -f /etc/amportal.conf &&
 rm -f /etc/freepbx.conf &&
@@ -520,46 +507,17 @@ rm -fr /opt/app/home/asterisk &&
 rm -fr /var/log/asterisk &&
 # Remove MariaDB related and reinstall
 rm -fr /var/lib/mysql &&
-dnf -y reinstall mariadb-server mariadb
+dnf -y reinstall mariadb-server mariadb asterisk
 # Restart mariadb, mysql, httpd and php-fpm
+systemctl enable --now asterisk &&
 systemctl restart mariadb &&
 systemctl restart mysql &&
 systemctl restart httpd &&
 systemctl restart php-fpm &&
-# Change into Asterisk directory
-cd /opt/app/usr/src/asterisk-18.* &&
-# Install asterisk again
-make install && make basic-pbx && make config && ldconfig &&
-# Change the permission
-chown -R asterisk.asterisk /etc/asterisk /var/{lib,log,spool}/asterisk /usr/lib64/asterisk &&
-# Start asterisk from FreePBX script
-cd /opt/app/usr/src/freepbx &&
-./start_asterisk kill
 ```
 
-Script end the process like below...
 ```
-KILLING AMP PROCESSES
-mpg123: no process found
-kill: not enough arguments
-op_server.pl: no process found
-```
-
-Make sure no asterisk is running.
-
-```
-cd /opt/app/usr/src/freepbx &&
-ps aux | grep asterisk
-```
-
-Then run the rest of the script to reinstall FreePBX.
-
-```
-cd /opt/app/usr/src/freepbx &&
-./start_asterisk start &&
-# Remove below so that FreePBX installer go through without error.
-rm -f /etc/asterisk/asterisk.conf &&
-# Finally start the installation
+# Start FreePBX Installation
 ./install -n
 ```
 
