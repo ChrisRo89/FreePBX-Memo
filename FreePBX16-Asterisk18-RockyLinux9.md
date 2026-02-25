@@ -45,9 +45,9 @@ dnf remove -y libsrtp libsrtp-devel
 FreePBX require SELINUX to be disabled. Once disabled, reboot the server.
 
 ```
+setenforce 0
 sudo sed -i 's/\(^SELINUX=\).*/\SELINUX=disabled/' /etc/sysconfig/selinux &&
 sudo sed -i 's/\(^SELINUX=\).*/\SELINUX=disabled/' /etc/selinux/config &&
-sudo reboot
 ```
 
 Make sure the SELINUX is disabled.
@@ -88,7 +88,7 @@ FreePBX requires **E**xtra **P**ackage for **E**nterprise **L**inux (EPEL).
 Run below to add the repository.
 
 ```
-sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+sudo dnf install -y epel-release
 
 ```
 
@@ -228,115 +228,7 @@ cd /opt/app/usr/src
 Since FreePBX 16 does not support Asterisk 20 as of 4/2/2023, download and install Asterisk 18.
 
 ```
-cd /opt/app/usr/src &&
-wget http://downloads.asterisk.org/pub/telephony/asterisk/asterisk-18-current.tar.gz &&
-tar zxvf asterisk-18-current.tar.gz &&
-cd asterisk-18.*/
-```
-
-##### 1.2.1.2 Install Prerequisit for Building Asterisk
-
-Install necessary packages for Asterisk build process.
-
-```
-sudo ./contrib/scripts/install_prereq install &&
-sudo ./contrib/scripts/get_mp3_source.sh
-```
-
-##### 1.2.1.3 Configure Asterisk
-
-Once downloaded and unarchived, configure Asterisk.  
-Since both jannson (C library required for media encoding/decoding) and PJSIP are bundled in the Asterisk's installation script, add `--with-jansson-bundled` and `--with-pjproject-bundled` switches respectively.
-
-```
-./configure --prefix=/usr --libdir=/usr/lib64 --with-jansson-bundled --with-pjproject-bundled --with-ssl=ssl
-```
-
-##### 1.2.1.4 Set Asterisk Menu Options
-
-```
-make menuselect
-```
-
-[Note]:
-
-- When the menu pops up, install system message audio data (Core Sound Files) other than wav formats, (otherwise no message would heard from phoneset.)
-  After selecting 'Save & Exit' continue for installation.
-- Since Asterisk 18 deplicated `app_macro.so`, but FreePBX still uses it, it has to be selected.
-
-```
-Add-ons (See README-addons.txt)
- +--> Select format_mp3
-Applications
- +--> Select app_macro
-Bridging Modules
-Channel Event Logging
-Channel Drivers
-Codec Translators
- +---> Select all External Codecs
-Format Interpreters
-Dialplan Functions
-PBX Modules
-Resource Modules
-Test Modules
-Compiler Flags
-Utilities
-AGI Samples
-Core Sound Packages
- +--> Select WAV, ULAW, ALAW, GSM, G729, G722
-Music On Hold File Packages
- +--> Select WAV, ULAW, ALAW, GSM, G729, G722
-MENUSELECT_EXTRA_SOUNDS
- +--> Select WAV, ULAW, ALAW, GSM, G729, G722
-```
-
-##### 1.2.1.5 Build Asterisk and Install
-
-Now it is ready to build Asterisk.
-
-```
-make &&
-make install
-```
-
-Once the installation is finished, the dummy configuration has to be generated for seemless FreePBX installation.    
-To perform `make config`, `chkconfig` package needs to be installed for RL9, (RL8 has it installed by default).
-
-```
-mv /etc/init.d /tmp &&
-dnf -y install chkconfig &&
-cp /tmp/init.d/* /etc/init.d
-```
-
-[Note]: `/etc/init.d` directory has to be moved temporary to avoid installation error.
-
-```
-make basic-pbx &&
-make config &&
-ldconfig
-```
-
-##### 1.2.1.6 Add the Asterisk User and Group
-
-Define asterisk user and group.
-
-```
-sudo groupadd asterisk &&
-sudo useradd -r -d /opt/app/home/asterisk -g asterisk asterisk &&
-sudo usermod -aG audio,dialout asterisk &&
-sudo chown -R asterisk.asterisk /etc/asterisk /var/{lib,log,spool}/asterisk /usr/lib64/asterisk &&
-mkhomedir_helper asterisk
-```
-
-[Note]: `mkhomedir_helper` command will ensure the asterisk home directory is under `/opt/app/home/asterisk`.
-
-Add below to make sure the process is run by `asterisk` user.
-
-```
-echo AST_USER="asterisk" >> /etc/sysconfig/asterisk &&
-echo AST_GROUP="asterisk" >> /etc/sysconfig/asterisk &&
-echo "runuser = asterisk" >> /etc/asterisk/asterisk.conf &&
-echo "rungroup = asterisk" >> /etc/asterisk/asterisk.conf
+dnf install -y asterisk asterisk-mysql
 ```
 
 ### 1.3 FreePBX 16 Installation
